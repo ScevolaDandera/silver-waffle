@@ -1,4 +1,4 @@
-import { Project, Scene3D, PhysicsLoader } from 'enable3d'
+import { THREE, Project, Scene3D, PhysicsLoader } from 'enable3d'
 
 class MainScene extends Scene3D {
   constructor() {
@@ -16,25 +16,43 @@ class MainScene extends Scene3D {
 
   async create() {
     // set up scene (light, ground, grid, sky, orbitControls)
-     const { camera, ground, lights, orbitalControls } = await this.warpSpeed()
+     let { camera,  ground, lights, orbitalControls } = await this.warpSpeed()
+   //  console.log(ground);
 
+     const sphereGeometry = new THREE.PlaneGeometry( 1, 1, 10,10 );
+     const pmaterial = new THREE.MeshStandardMaterial( {
+      color: 'grey',
+      wireframe: true,
+  } );
+  ground = new THREE.Mesh(sphereGeometry, pmaterial);
+ // this.physics.add.ground(this.newground);
+  // this.ground.material = pmaterial;
+  // this.ground.geometry = sphereGeometry;
+
+
+
+
+
+
+
+     
     // enable physics debug
     this.physics.debug.enable()
 
     // position camera
-    this.camera.position.set(13, 10, 13)
+    this.camera.position.set(5, 5, 10)
     // blue box (without physics)
    this.staticbox = this.physics.add.box({ y: 5 }, { lambert: { color: 'deepskyblue' } })
 
     // pink box (with physics)
    this.phyicsbox =  this.physics.add.box({ y: 0 }, { lambert: { color: 'hotpink' } })
    this.phyicsbox2 =  this.physics.add.box({ z: 0, x:-10 }, { lambert: { color: 'yellow' } })
-   this.phyicsbox2.body.applyForceX(20);
+   this.phyicsbox2.body.applyForceX(5);
   }
 
   update() {
-    this.staticbox.rotation.x += 1
-    this.phyicsbox.rotation.y += 1
+    this.staticbox.rotation.x += 1;
+    this.phyicsbox.rotation.y += 1;
   }
 }
 

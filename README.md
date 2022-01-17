@@ -13,3 +13,6 @@ yarn build
 ```
 
 to bundle your application
+
+npm install light-server
+npx light-server -s dist
