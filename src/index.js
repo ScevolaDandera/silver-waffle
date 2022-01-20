@@ -23,10 +23,19 @@ class MainScene extends Scene3D {
    
    const planeTexture = await this.load.texture("/static/rock.webp");
     const heightmap = await this.load.texture("/static/heightmap.png");
-    const geometry = new THREE.PlaneBufferGeometry( 100, 100, 100, 100);
+    const widthSegments = 2;
+    const heightSegments = 2;
+    
+// imgws = image.width/wsegment;
+// imghs = image.height/hsegment;
+    const geometry = new THREE.PlaneBufferGeometry( 100, 100, widthSegments, heightSegments);
 //
+const totalpoints = (widthSegments * 3) + (heightSegments * 3) - (widthSegments + heightSegments);
+console.log('total points ' + totalpoints);
+
 const positionAttribute = geometry.getAttribute( 'position' );
   const vertex = new THREE.Vector3();
+  console.log(positionAttribute.count);
   for ( let i = 0; i < positionAttribute.count; i++ ) {
   let t = vertex.fromBufferAttribute( positionAttribute, i ); // read vertex
 // do something with vertex
@@ -34,9 +43,12 @@ const positionAttribute = geometry.getAttribute( 'position' );
 //vertex.x = Math.random() * (20 - -10) + -10;
 //vertex.y = Math.random() * (20 - -10) + -10;
 vertex.z = Math.random() * (1 - -1) + -1;
+console.log(vertex);
 
 positionAttribute.setXYZ( i, vertex.x, vertex.y, vertex.z ); // write coordinates
   }
+
+  
 
     geometry.attributes.position.needsUpdate = true
     geometry.computeVertexNormals();
@@ -44,9 +56,9 @@ positionAttribute.setXYZ( i, vertex.x, vertex.y, vertex.z ); // write coordinate
      map: planeTexture,
     //  displacementMap: heightmap,
     //  displacementScale: 4,
-   //  wireframe: true
+     wireframe: true
       });
-      console.log(material.displacementMap);
+
     const plane = new ExtendedMesh(geometry, material)
     plane.position.set(0, 0, 0)
     plane.rotation.x =  -Math.PI / 2;
