@@ -1,4 +1,5 @@
-import { THREE, Project, Scene3D, PhysicsLoader, ThirdDimension, ExtendedMesh } from 'enable3d'
+import { THREE, Project, Scene3D, PhysicsLoader, ExtendedMesh } from 'enable3d'
+
 
 class MainScene extends Scene3D {
   constructor() {
@@ -15,53 +16,62 @@ class MainScene extends Scene3D {
   }
 
   async create() {
-    // set up scene (light, ground, grid, sky, orbitControls)
+    // set up scene (light, grid, sky, orbitControls)
    let { camera, lights, orbitalControls } = await this.warpSpeed('-ground')
-  //     let { camera, lights, ground, orbitalControls } = await this.warpSpeed()
-  // console.log(ground);
-   this.physics.debug.enable();
+  //this.physics.debug.enable();
   
-     const planeTexture = await this.load.texture(
-      "/static/rock.webp"
-    );
+   
+   const planeTexture = await this.load.texture("/static/rock.webp");
+    const heightmap = await this.load.texture("/static/heightmap.png");
+    const geometry = new THREE.PlaneBufferGeometry( 100, 100, 100, 100);
+//
+const positionAttribute = geometry.getAttribute( 'position' );
+  const vertex = new THREE.Vector3();
+  for ( let i = 0; i < positionAttribute.count; i++ ) {
+  let t = vertex.fromBufferAttribute( positionAttribute, i ); // read vertex
+// do something with vertex
 
-    const heightmap = await this.load.texture(
-      "/static/heightmap.png"
-    );
+//vertex.x = Math.random() * (20 - -10) + -10;
+//vertex.y = Math.random() * (20 - -10) + -10;
+vertex.z = Math.random() * (1 - -1) + -1;
 
+positionAttribute.setXYZ( i, vertex.x, vertex.y, vertex.z ); // write coordinates
+  }
 
-
-
-    //
-    const geometry = new THREE.PlaneBufferGeometry( 20, 20, 10, 10);
+    geometry.attributes.position.needsUpdate = true
+    geometry.computeVertexNormals();
     const material = new THREE.MeshStandardMaterial( {
      map: planeTexture,
-   //  displacementMap: heightmap,
-  //   displacementScale: 4
+    //  displacementMap: heightmap,
+    //  displacementScale: 4,
    //  wireframe: true
-    //  alphaMap: alphamap,
-    // side: THREE.DoubleSide,
-      // transparent: true, 
-      // depthTest: false
-  } );
-    const plane = this.heightMap.add(heightmap);
- //   const plane = new ExtendedMesh(geometry, material)
-    plane.material = material;
-    plane.geometry = geometry;
+      });
+      console.log(material.displacementMap);
+    const plane = new ExtendedMesh(geometry, material)
     plane.position.set(0, 0, 0)
-   plane.rotation.x =  -Math.PI / 2;
+    plane.rotation.x =  -Math.PI / 2;
+    plane.castShadow = true;
+    plane.receiveShadow = true;
     this.scene.add(plane)
-    this.physics.add.existing(plane, { shape: 'convex', mass: 0, collisionFlags:2})
+ 
 
+
+    this.physics.add.existing(plane, { shape: 'concaveMesh', mass: 0, collisionFlags:1})
 
     // position camera
     this.camera.position.set(5, 15, 50)
 
     // pink box (with physics)
-   this.phyicsbox =  this.physics.add.box({ y: 10 }, { lambert: { color: 'hotpink' } })
-   this.phyicsbox2 =  this.physics.add.box({ y: 20, z: 0, x:5 }, { lambert: { color: 'yellow' } })
+   this.phyicsbox =  this.physics.add.box({ y: 20 }, { lambert: { color: 'hotpink' } })
+   this.phyicsbox2 =  this.physics.add.box({ y: 10, z: 0, x:0 }, { lambert: { color: 'yellow' } })
    this.phyicsbox2.body.applyForceX(1);
+   this.haveSomeFun();
   }
+
+
+
+
+
 
   update() {
     // this.staticbox.rotation.x += 1;

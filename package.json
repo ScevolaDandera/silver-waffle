@@ -4,6 +4,7 @@
   "description": "My webpack project",
   "main": "index.js",
   "dependencies": {
+    "@enable3d/phaser-extension": "^0.25.0",
     "enable3d": "^0.24.1",
     "matter-js": "^0.17.1",
     "parcel": "^2.2.0",
