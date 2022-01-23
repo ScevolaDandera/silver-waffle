@@ -1,5 +1,5 @@
 import { THREE, Project, Scene3D, PhysicsLoader, ExtendedMesh } from "enable3d";
-import { BlendingEquation, Vector2 } from "three";
+import { BlendingEquation } from "three";
 
 class MainScene extends Scene3D {
   constructor() {
@@ -23,79 +23,66 @@ class MainScene extends Scene3D {
     //end of texture messing
   }
 
-  sat(x) {
-    return Math.min(Math.max(x, 0.0), 1.0);
-  }
-
-  modifyMesh(g) {
+  modifyMesh(g, zvertex) {
     const positionAttribute = g.getAttribute("position");
-    let nodes = positionAttribute.count;
-    function createNoise(nodes) {
-      let gridata = [];
-      for (let i = 0; i <= nodes; i++) {
-        let v = Math.random() * (0 - -1) + -1;
-        gridata.push(v);
-      }
-      return gridata;
-    }
-    let grid = createNoise(nodes);
+    const vertex = new THREE.Vector3();
+    //   console.log(zvertex);
+    //   console.log(positionAttribute.count);
+    for (let i = 0; i < positionAttribute.count; i++) {
+      vertex.fromBufferAttribute(positionAttribute, i); // read vertex
+      // do something with vertex
+      // vertex.x = Math.random() * (20 - -10) + -10;
+      // vertex.y = Math.random() * (20 - -10) + -10;
 
+      vertex.z = zvertex[i];
 
-    const v = new THREE.Vector3();
-
-    for (let i = 0; i < nodes; i++) {
-      v.fromBufferAttribute(positionAttribute, i); // read vertex
-        let dist = new THREE.Vector2(v.x, v.y).distanceTo(new THREE.Vector2(0,0));
-        let h = this.sat(dist / 250.0) * 50;
-        v.z = h;
-
-              if(v.x == 250 || v.y == 250 || v.x == -250 || v.y == -250) {
-            v.z = -60.0;
-          } 
-      positionAttribute.setXYZ(i, v.x, v.y, v.z+grid[i]); // write coordinates
+      positionAttribute.setXYZ(i, vertex.x, vertex.y, vertex.z); // write coordinates
     }
     g.attributes.position.needsUpdate = true;
     g.computeVertexNormals();
   }
 
-
+  createNoise(nodes) {
+    let grid = [];
+    for (let i = 0; i <= nodes; i++) {
+      let v = Math.random() * (1 - -1) + -1;
+      grid.push(v);
+    }
+    return grid;
+  }
 
   async create() {
     let { camera, lights, orbitalControls } = await this.warpSpeed("-ground");
-  // this.physics.debug.enable();
+    this.physics.debug.enable();
 
     // const bumpimg = await this.load.texture("/static/grayscale.png");
-    const planewidth = 500;
-    const planeheight = 500;
-    const widthSegments = 150;
-    const heightSegments = 150;
+    const widthSegments = 10;
+    const heightSegments = 10;
 
-      const planeTexture = await this.load.texture("/static/rock.webp");
-     // const planeTexture = await this.load.texture("/static/ground.jpg");
-  //  const planeTexture = await this.load.texture("/static/heightmap.png");
+    //  const planeTexture = await this.load.texture("/static/rock.webp");
+    const planeTexture = await this.load.texture("/static/heightmap.png");
 
     const geometry = new THREE.PlaneBufferGeometry(
-      planewidth,
-      planeheight,
+      100,
+      100,
       widthSegments,
       heightSegments
     );
-  //  const totalPoints = geometry.getAttribute("position").count;
-  //  const zvertex = this.createNoise(totalPoints);
-    this.modifyMesh(geometry);
+    const totalPoints = geometry.getAttribute("position").count;
+    const zvertex = this.createNoise(totalPoints);
+    this.modifyMesh(geometry, zvertex);
 
     const material = new THREE.MeshStandardMaterial({
-  //    color: 0x0000ff,
-      map: planeTexture,
-      // displacementMap: planeTexture,
-      // displacementScale: 1,
-    //  wireframe: true,
-    side: THREE.DoubleSide
+      color: 0x0000ff,
+      // map: planeTexture,
+      // displacementMap: heightmap,
+      // displacementScale: 8,
+      wireframe: true,
     });
 
     const plane = new ExtendedMesh(geometry, material);
-    plane.position.set(0, -0.5, 0);
-   plane.rotation.x = Math.PI / 2;
+    plane.position.set(0, 0, 0);
+    plane.rotation.x = -Math.PI / 2;
     plane.castShadow = true;
     plane.receiveShadow = true;
     this.scene.add(plane);
@@ -105,17 +92,6 @@ class MainScene extends Scene3D {
       mass: 0,
       collisionFlags: 1,
     });
-
-
-
-    const sea = new ExtendedMesh(new THREE.PlaneGeometry(500,500,50,50), new THREE.MeshStandardMaterial( { color: 0x0000ff}));
-    sea.position.set(0, -40,0);
-    sea.rotation.x = -Math.PI / 2;
-    sea.castShadow = true;
-    sea.receiveShadow = true;
-    this.scene.add(sea);
-
-
 
     // position camera
     this.camera.position.set(5, 15, 50);
@@ -129,8 +105,8 @@ class MainScene extends Scene3D {
       { y: 10, z: 0, x: 0 },
       { lambert: { color: "yellow" } }
     );
-   // this.phyicsbox2.body.applyForceX(1);
-    //this.haveSomeFun();
+    this.phyicsbox2.body.applyForceX(1);
+    this.haveSomeFun();
   }
 
   update() {
