@@ -1,6 +1,5 @@
 import { THREE, Project, Scene3D, PhysicsLoader, ExtendedMesh } from "enable3d";
 import { BlendingEquation, Vector2 } from "three";
-import { ImprovedNoise } from '../modules/ImprovedNoise.js';
 
 class MainScene extends Scene3D {
   constructor() {
@@ -12,67 +11,68 @@ class MainScene extends Scene3D {
     this.renderer.setSize(window.innerWidth, window.innerHeight);
   }
 
-  async preload() {}
+  async preload() {
+    // preload your assets here
+    // messing with texture
+    //  const loader = new THREE.TextureLoader();
+    // const loadimage = await loader.load("/static/grayscale.png", (texture) => {
+    //https://jsfiddle.net/e4Lr5xzp/1/
+    //http://www.adrianboeing.com/demoscene/test/particleimage/canvas_particles_image.html
+    //  this.imagedata = this.getImageData(texture.image);
+    //  });
+    //end of texture messing
+  }
 
-  modifyMesh(g,hd) {
+  sat(x) {
+    return Math.min(Math.max(x, 0.0), 1.0);
+  }
+
+  modifyMesh(g) {
     const positionAttribute = g.getAttribute("position");
     let nodes = positionAttribute.count;
-    const v = new THREE.Vector3();
-    console.log("number of nodes: ", nodes);
-    console.log("number of noise points: ", hd.length)
-    for (let i = 0; i < hd.length; i++) {
-      v.fromBufferAttribute(positionAttribute, i); // read vertex
-      v.z = ~~hd[i];
-      positionAttribute.setXYZ(i, v.x, v.y, v.z); // write coordinates
+    function createNoise(nodes) {
+      let gridata = [];
+      for (let i = 0; i <= nodes; i++) {
+        let v = Math.random() * (0 - -1) + -1;
+        gridata.push(v);
+      }
+      return gridata;
     }
+    let grid = createNoise(nodes);
 
+
+    const v = new THREE.Vector3();
+
+    for (let i = 0; i < nodes; i++) {
+      v.fromBufferAttribute(positionAttribute, i); // read vertex
+        let dist = new THREE.Vector2(v.x, v.y).distanceTo(new THREE.Vector2(0,0));
+        let h = this.sat(dist / 250.0) * 50;
+        v.z = h;
+
+              if(v.x == 250 || v.y == 250 || v.x == -250 || v.y == -250) {
+            v.z = -60.0;
+          } 
+      positionAttribute.setXYZ(i, v.x, v.y, v.z+grid[i]); // write coordinates
+    }
     g.attributes.position.needsUpdate = true;
     g.computeVertexNormals();
   }
 
-  generateHeight(width, height, p) {
-    let seed = Math.PI / 4;
-    let FloorRandom =  function () {
-      const x = Math.sin(seed++) * 10000;
-      return x - Math.floor(x);
-    };
 
-    const size = width * height,
-      data = new Uint8Array(size);
-    const perlin = new ImprovedNoise(),
-      z = FloorRandom() * 100;
-
-    let quality = 1;
-
-    for (let j = 0; j < 4; j++) {
-      for (let i = 0; i < size; i++) {
-        const x = i % width,
-          y = ~~(i / width);
-        data[i] += Math.abs(
-          perlin.noise(x / quality, y / quality, z) * quality * 1.75
-        );
-      }
-
-      quality *= 5;
-    }
-
-    return data;
-  }
 
   async create() {
     let { camera, lights, orbitalControls } = await this.warpSpeed("-ground");
+  // this.physics.debug.enable();
 
-    // this.physics.debug.enable();
-
+    // const bumpimg = await this.load.texture("/static/grayscale.png");
     const planewidth = 500;
     const planeheight = 500;
-    const widthSegments = 10;
-    const heightSegments = 10;
+    const widthSegments = 150;
+    const heightSegments = 150;
 
-    
-
-
-    const planeTexture = await this.load.texture("/static/rock.webp");
+      const planeTexture = await this.load.texture("/static/rock.webp");
+     // const planeTexture = await this.load.texture("/static/ground.jpg");
+  //  const planeTexture = await this.load.texture("/static/heightmap.png");
 
     const geometry = new THREE.PlaneBufferGeometry(
       planewidth,
@@ -80,22 +80,22 @@ class MainScene extends Scene3D {
       widthSegments,
       heightSegments
     );
-    let points = geometry.getAttribute("position").count;
-    let heightData = this.generateHeight(widthSegments-1, heightSegments-1, points);
-    this.modifyMesh(geometry, heightData);
+  //  const totalPoints = geometry.getAttribute("position").count;
+  //  const zvertex = this.createNoise(totalPoints);
+    this.modifyMesh(geometry);
 
     const material = new THREE.MeshStandardMaterial({
-      color: 0x0000ff,
-      //  map: planeTexture,
+  //    color: 0x0000ff,
+      map: planeTexture,
       // displacementMap: planeTexture,
       // displacementScale: 1,
-      wireframe: true,
-      side: THREE.BackSide,
+    //  wireframe: true,
+    side: THREE.DoubleSide
     });
 
     const plane = new ExtendedMesh(geometry, material);
     plane.position.set(0, -0.5, 0);
-    plane.rotation.x = Math.PI / 2;
+   plane.rotation.x = Math.PI / 2;
     plane.castShadow = true;
     plane.receiveShadow = true;
     this.scene.add(plane);
@@ -106,15 +106,16 @@ class MainScene extends Scene3D {
       collisionFlags: 1,
     });
 
-    const sea = new ExtendedMesh(
-      new THREE.PlaneGeometry(500, 500, 50, 50),
-      new THREE.MeshStandardMaterial({ color: 0x0000ff })
-    );
-    sea.position.set(0, -40, 0);
+
+
+    const sea = new ExtendedMesh(new THREE.PlaneGeometry(500,500,50,50), new THREE.MeshStandardMaterial( { color: 0x0000ff}));
+    sea.position.set(0, -40,0);
     sea.rotation.x = -Math.PI / 2;
     sea.castShadow = true;
     sea.receiveShadow = true;
-    // this.scene.add(sea);
+    this.scene.add(sea);
+
+
 
     // position camera
     this.camera.position.set(5, 15, 50);
@@ -128,7 +129,7 @@ class MainScene extends Scene3D {
       { y: 10, z: 0, x: 0 },
       { lambert: { color: "yellow" } }
     );
-    // this.phyicsbox.body.applyForceX(2);
+   // this.phyicsbox2.body.applyForceX(1);
     //this.haveSomeFun();
   }
 
