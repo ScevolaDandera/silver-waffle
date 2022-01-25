@@ -1,6 +1,6 @@
 import { THREE, Project, Scene3D, PhysicsLoader, ExtendedMesh } from "enable3d";
-import { BlendingEquation, Vector2 } from "three";
 import { ImprovedNoise } from '../modules/ImprovedNoise.js';
+import * as PlayerControls from './PlayerControls.js';
 
 class MainScene extends Scene3D {
   constructor() {
@@ -60,19 +60,20 @@ class MainScene extends Scene3D {
   }
 
   async create() {
-    let { camera, lights, orbitalControls } = await this.warpSpeed("-ground");
+    let { camera, ground, lights, orbitalControls } = await this.warpSpeed();
 
     // this.physics.debug.enable();
 
-    const planewidth = 500;
-    const planeheight = 500;
-    const widthSegments = 10;
-    const heightSegments = 10;
+    const planewidth = 200;
+    const planeheight = 200;
+    const widthSegments = 100;
+    const heightSegments = 100;
 
     
 
 
-    const planeTexture = await this.load.texture("/static/rock.webp");
+    const planeTexture = await this.load.texture("/static/iceland-map.png");
+    const displacementTexture = await this.load.texture("/static/iceland-map-terrain.png");
 
     const geometry = new THREE.PlaneBufferGeometry(
       planewidth,
@@ -80,17 +81,17 @@ class MainScene extends Scene3D {
       widthSegments,
       heightSegments
     );
-    let points = geometry.getAttribute("position").count;
-    let heightData = this.generateHeight(widthSegments-1, heightSegments-1, points);
-    this.modifyMesh(geometry, heightData);
+    // let points = geometry.getAttribute("position").count;
+    // let heightData = this.generateHeight(widthSegments-1, heightSegments-1, points);
+   // this.modifyMesh(geometry, heightData);
 
     const material = new THREE.MeshStandardMaterial({
-      color: 0x0000ff,
-      //  map: planeTexture,
-      // displacementMap: planeTexture,
+       color: 0x0000ff,
+    //   map: planeTexture,
+      // displacementMap: displacementTexture,
       // displacementScale: 1,
       wireframe: true,
-      side: THREE.BackSide,
+      side: THREE.DoubleSide,
     });
 
     const plane = new ExtendedMesh(geometry, material);
@@ -98,43 +99,43 @@ class MainScene extends Scene3D {
     plane.rotation.x = Math.PI / 2;
     plane.castShadow = true;
     plane.receiveShadow = true;
-    this.scene.add(plane);
+  //  this.scene.add(plane);
 
-    this.physics.add.existing(plane, {
-      shape: "concaveMesh",
-      mass: 0,
-      collisionFlags: 1,
-    });
+    // this.physics.add.existing(plane, {
+    //   shape: "concaveMesh",
+    //   mass: 0,
+    //   collisionFlags: 1,
+    // });
 
-    const sea = new ExtendedMesh(
-      new THREE.PlaneGeometry(500, 500, 50, 50),
-      new THREE.MeshStandardMaterial({ color: 0x0000ff })
-    );
-    sea.position.set(0, -40, 0);
-    sea.rotation.x = -Math.PI / 2;
-    sea.castShadow = true;
-    sea.receiveShadow = true;
-    // this.scene.add(sea);
+    
 
     // position camera
     this.camera.position.set(5, 15, 50);
 
-    // pink box (with physics)
+
+
     this.phyicsbox = this.physics.add.box(
-      { y: 20 },
-      { lambert: { color: "hotpink" } }
-    );
-    this.phyicsbox2 = this.physics.add.box(
-      { y: 10, z: 0, x: 0 },
+      { y: 10, z: 0, x: 0, mass: 0.1 },
       { lambert: { color: "yellow" } }
     );
     // this.phyicsbox.body.applyForceX(2);
     //this.haveSomeFun();
+    
+
+    this.playerControls = new PlayerControls(this.phyicsbox);
+    this.playerControls.setControls();
   }
 
   update() {
-    // this.staticbox.rotation.x += 1;
-    // this.phyicsbox.rotation.y += 1;
+    let v = this.playerControls.update();
+    //console.log(v);
+
+    this.phyicsbox.body.setCollisionFlags(2)
+    this.phyicsbox.position.set(v.x,v.y,v.z);
+  //  this.phyicsbox.position.set(14,25,60);
+    this.phyicsbox.body.needUpdate = true;
+    this.phyicsbox.body.setCollisionFlags(0)
+
   }
 }
 
